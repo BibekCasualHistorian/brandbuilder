@@ -32,16 +32,13 @@ const deleteIndex = async (req, res) => {
       if (each.index == number + 1) {
         return;
       } else if (each.index > number + 1) {
-        const updateDocument = await IndexModel.findOneAndUpdate(
+        await IndexModel.findOneAndUpdate(
           { _id: each.id },
           { index: number + 1 },
           { new: true }
         );
-        console.log("updateDocument", updateDocument);
       }
     });
-
-    // change the index of existing documents to the new index
 
     return res
       .status(200)
@@ -55,79 +52,67 @@ const deleteIndex = async (req, res) => {
 const updateIndex = async (req, res) => {
   try {
     const { toBeUpdatedId, newIndex } = req.body;
-    let newIndexToBeUpdated = newIndex;
-    console.log(toBeUpdatedId, newIndex);
+
+    console.log("toBeUpdated", toBeUpdatedId, newIndex);
+
     if (!toBeUpdatedId || !newIndex) {
       throw Error("Invalid Credentails");
     }
 
     const allDocuments = await IndexModel.find({}).sort({ index: 1 });
 
-    const toBeUpdatedIndex = allDocuments.find((each) => {
-      //   console.log("each", each);
-      return each.id == toBeUpdatedId;
-    });
+    console.log("allDocuments", allDocuments);
 
-    if (newIndexToBeUpdated > allDocuments.length) {
-      // If newIndex is greater than the number of documents, place it at the end
-      newIndexToBeUpdated = allDocuments.length + 1; // Place at the end
-      const updatedIndex = await IndexModel.findOneAndUpdate(
-        {
-          _id: toBeUpdatedId,
-        },
-        { index: newIndexToBeUpdated },
-        {
-          new: true,
-        }
+    const toBeUpdatedIndex = allDocuments.findIndex(
+      (each) => each.id == toBeUpdatedId
+    );
+
+    const splittedArray = allDocuments[toBeUpdatedIndex];
+
+    if (newIndex >= allDocuments.length) {
+      const newlyArrangedArray = allDocuments.filter(
+        (each) => each.id !== toBeUpdatedId
       );
-
-      const newAllDocuments = await IndexModel.find({}).sort({ index: 1 });
-
-      newAllDocuments.map(async (each, number) => {
-        if (each.index == number + 1) {
-          return;
-        }
-        const updateDocument = await IndexModel.findOneAndUpdate(
-          { _id: each.id },
-          { index: number + 1 },
-          { new: true }
-        );
-      });
-      const updateIndex = await IndexModel.findOne({ _id: toBeUpdatedId });
-
-      return res.status(200).json({ status: true, updateIndex });
-    } else {
-      const udpatedAllDocument = await insertElementAtPosition(
-        allDocuments,
-        toBeUpdatedIndex,
-        newIndex
-      );
-
-      udpatedAllDocument.map(async (each) => {
-        const update = await IndexModel.findOneAndUpdate(
-          { _id: each.id },
-          each,
+      console.log("before pushing newlyArranged", newlyArrangedArray);
+      newlyArrangedArray.push(splittedArray);
+      console.log("after pushing newlyArrangedArray", newlyArrangedArray);
+      await newlyArrangedArray.map(async (each, number) => {
+        console.log("each", each);
+        each.index = number + 1;
+        await IndexModel.findOneAndUpdate(
+          { _id: each._id },
+          { index: each.index },
           {
             new: true,
           }
         );
+        // }
       });
+      return res.status(200).json({ status: true });
+    } else {
+      const updatedAllDocument = await insertElementAtPosition(
+        allDocuments,
+        toBeUpdatedIndex,
+        newIndex - 1
+      );
 
-      const newAllDocuments = await IndexModel.find({}).sort({ index: 1 });
+      console.log("updatedAllDocument", updatedAllDocument);
 
-      newAllDocuments.map(async (each, number) => {
-        if (each.index == number + 1) {
-          return;
-        }
-        const updateDocument = await IndexModel.findOneAndUpdate(
+      updatedAllDocument.map(async (each, number) => {
+        each.index = number + 1;
+        const updatedDocument = await IndexModel.findOneAndUpdate(
           { _id: each.id },
           { index: number + 1 },
           { new: true }
         );
-        console.log("updateDocument", updateDocument);
+        console.log("updatedDocument", updatedDocument);
       });
-      const updateIndex = await IndexModel.findOne({ _id: toBeUpdatedId });
-      return res.status(200).json({ status: true, updateIndex });
+
+      const newAllDocuments = await IndexModel.find({}).sort({ index: 1 });
+
+      console.log("newAllDocuments", newAllDocuments);
+
+      return res.status(200).json({ status: true });
     }
   } catch (error) {
     return res.status(404).json({ error: error.message });

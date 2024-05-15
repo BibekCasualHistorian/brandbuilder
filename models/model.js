@@ -4,7 +4,7 @@ const IndexSchema = new mongoose.Schema(
   {
     index: {
       type: Number,
-      //   unique: true,
+      // unique: true,
     },
     name: {
       type: String,
@@ -24,24 +24,6 @@ IndexSchema.pre("save", async function (next) {
   }
   next();
 });
-
-IndexSchema.pre(
-  "remove",
-  { document: true, query: false },
-  async function (next) {
-    const deletedIndex = this.index;
-    await updateIndexesAfterDelete(deletedIndex);
-    next();
-  }
-);
-
-async function updateIndexesAfterDelete(deletedIndex) {
-  const Index = mongoose.model("position", IndexSchema);
-  await Index.updateMany(
-    { index: { $gt: deletedIndex } },
-    { $inc: { index: -1 } }
-  );
-}
 
 async function getNextIndex() {
   const Index = mongoose.model("index", IndexSchema);

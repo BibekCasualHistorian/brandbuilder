@@ -1,19 +1,13 @@
-function insertElementAtPosition(allDocuments, newElement, newIndex) {
-  // Validate newIndex
-  if (newIndex < 0 || newIndex > allDocuments.length) {
-    console.error("Invalid newIndex: Position out of range");
-    return allDocuments; // Return original array if position is invalid
-  }
+function insertElementAtPosition(allDocuments, indexToPop, newIndex) {
+  const arrayToModify = allDocuments;
+  const poppedElement = arrayToModify.splice(indexToPop, 1)[0];
 
-  // Shift indices of elements after the insertion point
-  for (let i = allDocuments.length - 1; i >= newIndex; i--) {
-    allDocuments[i].index += 1;
-  }
+  const finalPosition = Math.min(Math.max(0, newIndex), arrayToModify.length);
 
-  // Insert the new element at the specified position
-  allDocuments.splice(newIndex, 0, newElement);
+  arrayToModify.splice(finalPosition, 0, poppedElement);
 
-  return allDocuments;
+  console.log("arrayToModify", arrayToModify);
+  return arrayToModify;
 }
 
 module.exports = insertElementAtPosition;
